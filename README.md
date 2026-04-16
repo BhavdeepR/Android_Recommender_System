@@ -43,3 +43,32 @@ We implemented two primary baselines to establish a performance floor for the re
 python3 -m baselines.baseline_popularity
 python3 -m baselines.baseline_knn_cf
 ```
+## 3. Evaluation Framework
+
+To compare all of the models fairly, our project uses a shared evaluation setup based on the temporal split from the data pipeline.
+
+### Split Strategy
+The evaluation uses a **time-based split per user** after sorting each users interactions by timestamp:
+- the **last 5** interactions go to the **test set**.
+- the **previous 5** interactions go to the **validation set**.
+- the remaining interactions stay in the **training set**.
+
+We preferred to use this setup because our goal is to use each users past behavior to predict their future behaviours.
+
+### Evaluation Metrics
+The main evaluation metrics are:
+- **Recall@10**
+- **Precision@10**
+- **HitRate@10**
+
+The chosen metrics are used to measure how well of a job the models do recommending relevant apps in the top 10 results. 
+
+### Dataset Specific Evaluation Details
+Since the dataset we are using is based on app installs, we treat it as an **implicit feedback** dataset:
+- each install is treated as a **positive interaction**
+- missing interactions are **not treated as true negative feedback**
+
+During evaluation process, the apps that have already been seen in the training set are filtered out from the recommendation list so that the model is evaluated on new app recommendations. 
+
+### Shared Evaluation Code
+The shared evaluation logic is implemented in `baselines/evaluate.py` and is used by both of the baseline scripts.
