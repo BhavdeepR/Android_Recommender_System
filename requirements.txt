@@ -4,3 +4,5 @@ scipy
 scikit-learn
 scikit-surprise
 joblib
+torch
+torch-geometric
