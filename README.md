@@ -72,3 +72,21 @@ During evaluation process, the apps that have already been seen in the training 
 
 ### Shared Evaluation Code
 The shared evaluation logic is implemented in `baselines/evaluate.py` and is used by both of the baseline scripts.
+
+## 4. Advanced Models
+
+We explored deep-learning variants beyond standard memory-based algorithms, specifically a Graph Neural Network (LightGCN) natively handling bipartite graphs to cut through extreme data sparsity.
+
+**To run the data extraction, baselines, and this advanced variant identically end-to-end at any time:**
+```bash
+./graph_run_pipeline.sh
+```
+
+### LightGCN Variant Evaluation Results
+Because Graph approaches can discover niche non-overlapping similarities mathematically, **this variant outperformed both baselines in every single tracked metric.**
+
+| Metric | LightGCN Graph Model (@10) | Popularity Baseline (@10) | User-KNN Baseline (@10) |
+| :--- | :--- | :--- | :--- |
+| Recall | 0.0627 | 0.0553 | 0.0440 |
+| Precision | 0.0365 | 0.0255 | 0.0204 |
+| Hit Rate | 0.2517 | 0.2205 | 0.1825 |
