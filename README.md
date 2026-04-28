@@ -189,12 +189,17 @@ We explored three distinct advanced architectures to push beyond the baselines:
 
 ---
 
-### ▶️ Run Full Pipeline (End-to-End)
+### ▶️ Run Full Pipeline with Baselines 
 
 ```bash
 ./graph_run_pipeline.sh
 ```
+---
+### ▶️ Run Graph Variants with Baselines 
 
+```bash
+variant_graph/run_variants.sh
+```
 ---
 
 ## 📌 Summary

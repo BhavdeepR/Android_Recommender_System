@@ -2,9 +2,9 @@
 
 set -e
 
-echo "======================================"
-echo " Android Recommender System Pipeline "
-echo "======================================"
+echo 
+echo " Android Recommender System Pipeline with graph variants "
+echo 
 
 VENV_DIR=".venv"
 PYTHON_BIN="python3.12"
@@ -26,18 +26,13 @@ python -m pip install -r requirements.txt
 
 echo ""
 echo "[Step 1] Running Data Preprocessing (Building artifacts & Splitting Data)..."
-python src/build_npy.py
+python variant_graph/graph_build_npy.py
 
 echo ""
-echo "[Step 2] Running Popularity Baseline..."
-python -m baselines.baseline_popularity
+echo "[Step 2] Running Pure LightGCN Variant..."
+python variant_graph/variant_lightgcn_colab.py
 
 echo ""
-echo "[Step 3] Running User-Based KNN-CF Baseline..."
-python -m baselines.baseline_knn_cf
+echo "[Step 3] Running LightGCN + Metadata Variant..."
+python variant_graph/variant_lightgcn_metadata_colab.py
 
-echo ""
-echo "======================================"
-echo " Pipeline Completed Successfully! "
-echo " Results are saved in pipeline_output/results/ "
-echo "======================================"
