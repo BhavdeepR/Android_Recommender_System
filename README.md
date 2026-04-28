@@ -1,92 +1,218 @@
-# Android App Recommender System
+# 📱 Android App Recommender System
 
-A recommender system built to recommend Android apps to users based on their implicit interactions (installs/views). The project uses a dataset from the Myket Android App Store.
+A recommendation system designed to suggest Android apps based on users’ **implicit interactions** (e.g., installs and views). This project uses real-world data from the **Myket Android App Store**.
 
-## Setup & Installation
+---
 
-Install the required packages using the `requirements.txt` file:
+## 🚀 Setup & Installation
+
+Install dependencies using:
 
 ```bash
 pip install -r requirements.txt
 ```
-*(Note: `scikit-surprise` requires `numpy<2` to run correctly on current systems).*
 
-## 1. The Data Pipeline (`src/build_npy.py`)
+> ⚠️ **Note:** `scikit-surprise` currently requires `numpy < 2`.
 
-The `src/build_npy.py` script serves as the main data ingestion and preprocessing pipeline. Its primary use cases are:
+---
 
-1.  **ID Encoding:** Reads the raw dataset (`data/myket.csv`) and encodes the raw large integer User IDs and string Category/App package names into contiguous integer indices (e.g., 0 to 9,999 for users, 0 to 7,987 for apps).
-2.  **Feature Processing:** Reads `data/app_info_sample.csv` to one-hot encode app categories and log-scale continuous features (like installs and ratings). It then builds a normalized dense feature matrix (`app_info_sample.npy`).
-3.  **Data Splitting:** Uses a user-based temporal split. By ordering each user's interactions by timestamp, the last *N=5* apps go to the test set, the prior *N=5* go to the validation set, and the rest remain in the training set.
-4.  **Sparse Matrices & Output generation:** It creates the CSR sparse interaction matrix used by models to compute similarities quickly. All resulting artifacts (CSV splits, `.npz` sparse matrices, and pickled ID mappers) are finally saved into `pipeline_output/`.
+## 🧱 1. Data Pipeline (`src/build_npy.py`)
 
-**To run the pipeline:**
+This script handles **data ingestion, preprocessing, and artifact generation**.
+
+### Key Responsibilities
+
+* **ID Encoding**
+
+  * Converts raw user IDs and app identifiers into contiguous integer indices
+  * Example: Users → `0 ... N`, Apps → `0 ... M`
+
+* **Feature Engineering**
+
+  * One-hot encodes app categories
+  * Applies log-scaling to numerical features (e.g., installs, ratings)
+  * Outputs a normalized feature matrix: `app_info_sample.npy`
+
+* **Temporal Data Splitting**
+
+  * Per-user chronological split:
+
+    * Last **5 interactions** → **Test set**
+    * Previous **5 interactions** → **Validation set**
+    * Remaining → **Training set**
+
+* **Sparse Matrix Construction**
+
+  * Builds CSR interaction matrices for efficient computation
+
+* **Output Artifacts**
+
+  * Saved in `pipeline_output/`:
+
+    * CSV splits
+    * `.npz` sparse matrices
+    * Pickled ID mappings
+
+### ▶️ Run the Pipeline
+
 ```bash
 python3 src/build_npy.py
 ```
 
-## 2. Baseline Models
+---
 
-We implemented two primary baselines to establish a performance floor for the recommender space. They read from `pipeline_output/` to ensure a consistent evaluation setup.
+## 📊 2. Baseline Models
 
-### Baseline 1: Most Popular Items (`baselines/baseline_popularity.py`)
-- **How it works:** It acts as a non-personalized baseline. It simply counts how many interactions each app had in the training datasets, ranks them in descending order, and recommends the overall top-K most popular unread apps to every user.
-- **Why it matters:** In environments with very high dataset sparsity, global popularity is exceptionally difficult to beat. Any truly personalized algorithm needs to outperform this model to be considered useful.
+All baselines use data from `pipeline_output/` for fair comparison.
 
-### Baseline 2: User-Based KNN Collaborative Filtering (`baselines/baseline_knn_cf.py`)
-- **How it works:** A classic memory-based collaborative filtering approach using `scikit-surprise`. It treats all interactions as binary "implicit feedback" (score 1) and calculates cosine similarity between the users. It extracts this fitted similarity matrix, and for each inference, scores unsampled apps based on the weighted preference similarity to other K-nearest users.
-- **Why it matters:** It serves as the standard memory-based reference point. While it offers personalization, it often struggles against the popularity baseline if intersection levels between users (sparsity) are too severely low.
+### 🔹 Baseline 1: Most Popular Items
 
-**To run the baselines:**
-*(Ensure the pipeline has been run first!)*
+**File:** `baselines/baseline_popularity.py`
+
+* **Approach:**
+
+  * Ranks apps by total interaction count
+  * Recommends top-K unseen apps globally
+
+* **Why it matters:**
+
+  * Strong non-personalized benchmark
+  * Hard to beat in sparse datasets
+
+---
+
+### 🔹 Baseline 2: User-Based KNN (Collaborative Filtering)
+
+**File:** `baselines/baseline_knn_cf.py`
+
+* **Approach:**
+
+  * Computes cosine similarity between users (`scikit-surprise`)
+  * Treats interactions as binary implicit feedback
+  * Scores apps based on similar users’ preferences
+
+* **Why it matters:**
+
+  * Classic personalization baseline
+  * Can struggle with extreme sparsity
+
+---
+
+### ▶️ Run Baselines
+
 ```bash
 python3 -m baselines.baseline_popularity
 python3 -m baselines.baseline_knn_cf
 ```
-## 3. Evaluation Framework
 
-To compare all of the models fairly, our project uses a shared evaluation setup based on the temporal split from the data pipeline.
+> ✅ Ensure the data pipeline has been executed first.
 
-### Split Strategy
-The evaluation uses a **time-based split per user** after sorting each users interactions by timestamp:
-- the **last 5** interactions go to the **test set**.
-- the **previous 5** interactions go to the **validation set**.
-- the remaining interactions stay in the **training set**.
+---
 
-We preferred to use this setup because our goal is to use each users past behavior to predict their future behaviours.
+## 📏 3. Evaluation Framework
 
-### Evaluation Metrics
-The main evaluation metrics are:
-- **Recall@10**
-- **Precision@10**
-- **HitRate@10**
+A shared evaluation setup ensures consistent model comparison.
 
-The chosen metrics are used to measure how well of a job the models do recommending relevant apps in the top 10 results. 
+### 🔄 Split Strategy
 
-### Dataset Specific Evaluation Details
-Since the dataset we are using is based on app installs, we treat it as an **implicit feedback** dataset:
-- each install is treated as a **positive interaction**
-- missing interactions are **not treated as true negative feedback**
+Time-based per-user split:
 
-During evaluation process, the apps that have already been seen in the training set are filtered out from the recommendation list so that the model is evaluated on new app recommendations. 
+* **Test set:** last 5 interactions
+* **Validation set:** previous 5
+* **Training set:** remaining interactions
 
-### Shared Evaluation Code
-The shared evaluation logic is implemented in `baselines/evaluate.py` and is used by both of the baseline scripts.
+This setup evaluates how well models predict **future behavior**.
 
-## 4. Advanced Models
+---
 
-We explored deep-learning variants beyond standard memory-based algorithms, specifically a Graph Neural Network (LightGCN) natively handling bipartite graphs to cut through extreme data sparsity.
+### 📐 Metrics
 
-**To run the data extraction, baselines, and this advanced variant identically end-to-end at any time:**
+* **Recall@10**
+* **Precision@10**
+* **HitRate@10**
+
+---
+
+### ⚙️ Dataset Assumptions
+
+* **Implicit Feedback Only**
+
+  * Interactions = positive signals
+  * No explicit negative feedback
+
+* **Evaluation Rules**
+
+  * Previously seen apps are filtered out
+  * Only **new recommendations** are evaluated
+
+---
+
+### 🧩 Shared Evaluation Code
+
+```bash
+baselines/evaluate.py
+```
+
+---
+
+## 🤖 4. Advanced Models
+
+### 🔹 LightGCN (Graph-Based Model)
+
+A Graph Neural Network designed for recommendation tasks on bipartite graphs.
+
+* Captures **high-order connectivity** between users and apps
+* Handles **extreme sparsity** better than traditional methods
+* Learns embeddings through **graph propagation**
+
+---
+
+### 📈 Results Comparison (@10)
+
+| Metric    | LightGCN | Popularity | User-KNN |
+| --------- | -------- | ---------- | -------- |
+| Recall    | 0.0627   | 0.0553     | 0.0440   |
+| Precision | 0.0365   | 0.0255     | 0.0204   |
+| Hit Rate  | 0.2517   | 0.2205     | 0.1825   |
+
+✅ LightGCN outperforms both baselines across all metrics.
+
+---
+
+### ▶️ Run Full Pipeline (End-to-End)
+
 ```bash
 ./graph_run_pipeline.sh
 ```
 
-### LightGCN Variant Evaluation Results
-Because Graph approaches can discover niche non-overlapping similarities mathematically, **this variant outperformed both baselines in every single tracked metric.**
+---
 
-| Metric | LightGCN Graph Model (@10) | Popularity Baseline (@10) | User-KNN Baseline (@10) |
-| :--- | :--- | :--- | :--- |
-| Recall | 0.0627 | 0.0553 | 0.0440 |
-| Precision | 0.0365 | 0.0255 | 0.0204 |
-| Hit Rate | 0.2517 | 0.2205 | 0.1825 |
+## 📌 Summary
+
+* Built a full recommendation pipeline from raw data to evaluation
+* Established strong baselines (Popularity, User-KNN)
+* Improved performance using **Graph Neural Networks (LightGCN)**
+* Demonstrated gains in all key ranking metrics
+
+---
+
+## 📁 Project Structure (Optional)
+
+```bash
+.
+├── data/
+├── src/
+├── baselines/
+├── pipeline_output/
+├── requirements.txt
+└── graph_run_pipeline.sh
+```
+
+---
+
+## 🙌 Acknowledgements
+
+* Dataset: Myket Android App Store
+* Libraries: NumPy, SciPy, scikit-surprise, PyTorch (for LightGCN)
+
+---
