@@ -188,8 +188,9 @@ print(f"Predictions generated in {time.time() - pred_time:.1f} seconds")
 results = evaluate_recommendations(
     recommendations=recommendations,
     ground_truth=ground_truth,
-    k_values=[5, 10]
+    k_values=[10]
 )
+
 # Takes the generated recommendations and ground-truth (true) app usages, then calculates metrics like recall@k and NDCG@k using the shared evaluation helper.
 
 print_results_table("Variant C.1: Pure LightGCN (Colab/CUDA)", results)

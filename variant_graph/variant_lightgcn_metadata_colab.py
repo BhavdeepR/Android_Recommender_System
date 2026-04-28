@@ -114,6 +114,7 @@ class LightGCN_Metadata(nn.Module):
         # embedding_dim: the latent dimension.
         # num_layers: the number of propagation steps.
         self.lightgcn = LightGCN(num_nodes=num_nodes, embedding_dim=hidden_dim, num_layers=num_layers) 
+    
         
         # A deeper MLP maps raw app metadata into the same embedding space as LightGCN.
         # The bottleneck and regularization help the model learn a cleaner metadata signal.
@@ -198,7 +199,7 @@ for epoch in range(1, EPOCHS + 1):
 
     # Recompute node embeddings after graph propagation for the current step.
     # computes node embeddings and selects the sampled user/positive/negative vectors.
-    emb = model.get_embedding(edge_index)
+    emb = model.get_embedding(edge_index, item_features)
     user_emb, pos_emb, neg_emb = emb[i], emb[j], emb[k]
 
     # BPR loss encourages positive items to score higher than sampled negatives.
@@ -206,7 +207,8 @@ for epoch in range(1, EPOCHS + 1):
     # teaches the model to rank true items above sampled negatives.
     pos_scores = (user_emb * pos_emb).sum(dim=-1)#dot product between user and positive item embeddings
     neg_scores = (user_emb * neg_emb).sum(dim=-1)#dot product between user and negative item embeddings
-    bpr_loss = -torch.log(torch.sigmoid(pos_scores - neg_scores) + 1e-8).mean()
+    loss_input = (pos_scores - neg_scores) / model.temperature 
+    bpr_loss = -torch.log(torch.sigmoid(loss_input) + 1e-8).mean()
 
     # A small L2 penalty helps keep embedding values from growing too large.
     # improves stability and prevents overfitting.
@@ -233,7 +235,7 @@ model.eval()
 
 with torch.no_grad():
     # Compute final embeddings once, then reuse them for ranking.
-    final_embs = model.get_embedding(edge_index)
+    final_embs = model.get_embedding(edge_index, item_features)
     final_user_embs = final_embs[:num_users].cpu().numpy()
     final_item_embs = final_embs[num_users:].cpu().numpy()
 
@@ -273,7 +275,7 @@ print(f"Predictions generated in {time.time() - pred_time:.1f} seconds")
 results = evaluate_recommendations(
     recommendations=recommendations,
     ground_truth=ground_truth,
-    k_values=[5, 10]
+    k_values=[10]
 )
 
 print_results_table("Variant C.2: LightGCN + Metadata MLP (Colab/CUDA)", results)

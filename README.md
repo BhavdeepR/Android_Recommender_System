@@ -152,30 +152,40 @@ This setup evaluates how well models predict **future behavior**.
 ```bash
 baselines/evaluate.py
 ```
-
 ---
 
 ## 🤖 4. Advanced Models
 
-### 🔹 LightGCN (Graph-Based Model)
+We explored three distinct advanced architectures to push beyond the baselines:
 
-A Graph Neural Network designed for recommendation tasks on bipartite graphs.
+### 🔹 Variant A: BPR Matrix Factorization with Time Decay
+**File:** `BPR_MF_with_Time_Decay.ipynb`
+* Implements Bayesian Personalized Ranking (BPR) to optimize for ranking items correctly.
+* Introduces a time decay factor to give more weight to recent user interactions, acknowledging that user app preferences change over time.
 
-* Captures **high-order connectivity** between users and apps
-* Handles **extreme sparsity** better than traditional methods
-* Learns embeddings through **graph propagation**
+### 🔹 Variant B: Atilla Hybrid
+**Directory:** `variant_atilla_hybrid/`
+* Combines content-based filtering with collaborative filtering signals.
+* Attempts to bridge the gap between user behavior and app semantic properties to improve predictions when interactions are sparse.
+
+### 🔹 Variant C: Graph Neural Networks (LightGCN)
+**Directory:** `variant_graph/`
+* **Pure LightGCN:** Captures high-order connectivity between users and apps by learning embeddings through graph propagation on the user-app bipartite graph.
+* **LightGCN with Metadata:** A hybrid approach that adds a Multi-Layer Perceptron (MLP) branch. It injects app metadata directly into the graph learning process, grounding the collaborative signals in actual app semantics and helping alleviate cold-start problems.
 
 ---
 
 ### 📈 Results Comparison (@10)
 
-| Metric    | LightGCN | Popularity | User-KNN |
-| --------- | -------- | ---------- | -------- |
-| Recall    | 0.0627   | 0.0553     | 0.0440   |
-| Precision | 0.0365   | 0.0255     | 0.0204   |
-| Hit Rate  | 0.2517   | 0.2205     | 0.1825   |
+| Model                     | Recall@10 | Precision@10 | Hit Rate@10 |
+|---------------------------|-----------|--------------|-------------|
+| Popularity Baseline       | 0.0553    | 0.0255       | 0.2205      |
+| User-KNN Baseline         | 0.0440    | 0.0204       | 0.1825      |
+| Variant B - HYBRID        | 0.0490    | 0.0228       | 0.2046      |
+| LightGCN                  | 0.0586    | 0.0270       | 0.2327      |
+| LightGCN With metadata    | 0.0618    | 0.0285       | 0.2456      |
 
-✅ LightGCN outperforms both baselines across all metrics.
+✅ The LightGCN with Metadata variant achieved the highest performance across all tracked metrics, significantly outperforming the baselines and other variants.
 
 ---
 
@@ -193,20 +203,6 @@ A Graph Neural Network designed for recommendation tasks on bipartite graphs.
 * Established strong baselines (Popularity, User-KNN)
 * Improved performance using **Graph Neural Networks (LightGCN)**
 * Demonstrated gains in all key ranking metrics
-
----
-
-## 📁 Project Structure (Optional)
-
-```bash
-.
-├── data/
-├── src/
-├── baselines/
-├── pipeline_output/
-├── requirements.txt
-└── graph_run_pipeline.sh
-```
 
 ---
 
